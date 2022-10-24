@@ -29,12 +29,17 @@ class TodoBloc extends BlocBase {
   // final StreamController<Todo> _controllerTodo =
   //     StreamController<Todo>.broadcast();
   Stream<List<Todo>> get streamOfTodos {
-    initializeTodos();
+    // initializeTodos();
     return _todoController.stream;
   }
 
+  Future<void> fetchAllTodosFromFirebase() async {
+    _listOfTodos = await _database.getAllTodosFromFirebase();
+    _sinkTodos.add(_listOfTodos);
+  }
+
   void initializeTodos() {
-    _listOfTodos = _database.getAllTodosFromFirebase();
+    // _listOfTodos = _database.getAllTodosFromFirebase();
     _todoController.add(_listOfTodos);
   }
 
@@ -75,8 +80,10 @@ class TodoBloc extends BlocBase {
     _todoController.add(_listOfTodos);
 
     try {
-      // _database.todos().doc(id).set()
-    } catch (e) {}
+      await _database.addChildTodoToFirebase(id, childItem);
+    } on FirebaseException {
+      rethrow;
+    }
   }
   // void addNestedTodo(String id, TodoItem nestedTodo) {
   //   _listOfTodos = [
@@ -105,7 +112,7 @@ class TodoBloc extends BlocBase {
   //   // notifyListeners();
   // }
 
-  void changeChildTodoStatus(String mainID, String itemID) {
+  Future<void> changeChildTodoStatus(Todo todo, ChildTodo childTodo) async {
     // var main = _listOfTodos[
     //     _listOfTodos.indexWhere((element) => element.todoItem.id == mainID)];
 
@@ -117,12 +124,12 @@ class TodoBloc extends BlocBase {
     // });
 
     _listOfTodos = [
-      for (final todo in _listOfTodos)
-        if (todo.id == mainID)
-          todo.copyWith(
+      for (final element in _listOfTodos)
+        if (element.id == todo.id)
+          element.copyWith(
             childTodos: [
-              for (final todoItem in todo.childTodos)
-                if (todoItem.id == itemID)
+              for (final todoItem in element.childTodos)
+                if (todoItem.id == childTodo.id)
                   todoItem.copyWith(
                     isDone: !todoItem.isDone,
                   )
@@ -131,22 +138,32 @@ class TodoBloc extends BlocBase {
             ],
           )
         else
-          todo
+          element
     ];
     _todoController.add(_listOfTodos);
+    try {
+      await _database.changeChildTodoStatusOnFirebase(todo);
+    } on FirebaseException {
+      rethrow;
+    }
   }
 
-  void changeStatus(String id) {
+  Future<void> changeStatusOfTodo(Todo todo) async {
     _listOfTodos = [
-      for (final todo in _listOfTodos)
-        if (todo.id == id)
-          todo.copyWith(
-            isDone: !todo.isDone,
+      for (final data in _listOfTodos)
+        if (data.id == todo.id)
+          data.copyWith(
+            isDone: !data.isDone,
           )
         else
-          todo
+          data
     ];
     _todoController.add(_listOfTodos);
+    try {
+      await _database.changeStatusOfTodoOnFirebase(todo);
+    } on FirebaseException {
+      rethrow;
+    }
   }
 
   @override

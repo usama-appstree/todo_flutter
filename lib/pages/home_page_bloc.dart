@@ -27,6 +27,7 @@ class _HomePageBlocState extends State<HomePageBloc> {
   void initState() {
     super.initState();
     bloc = TodoBloc();
+    bloc.fetchAllTodosFromFirebase();
     // createBottomBannerAd();
     // createInlineBannerAd();
     // createInterstitialAd();

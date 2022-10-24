@@ -3,9 +3,6 @@ import 'package:dribble_ui/pages/todo_detail_page.dart';
 import 'package:dribble_ui/state/todo_bloc.dart';
 import 'package:dribble_ui/widgets/bottom_sheet.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-import 'package:dribble_ui/state/todo_provider.dart';
 
 class TodoItemWidget extends StatefulWidget {
   const TodoItemWidget({
@@ -109,7 +106,7 @@ class _TodoItemWidgetState extends State<TodoItemWidget> {
                   leading: GestureDetector(
                     onTap: () {
                       // provider.changeStatus(widget.todo.id);
-                      widget.bloc.changeStatus(widget.todo.id);
+                      widget.bloc.changeStatusOfTodo(widget.todo);
                     },
                     child: Container(
                       height: 40,
@@ -185,10 +182,10 @@ class _TodoItemWidgetState extends State<TodoItemWidget> {
                     return ListTile(
                       leading: Checkbox(
                           value: e.isDone,
-                          onChanged: (value) {
-                            widget.bloc.changeChildTodoStatus(
-                              widget.todo.id,
-                              e.id,
+                          onChanged: (value) async {
+                            await widget.bloc.changeChildTodoStatus(
+                              widget.todo,
+                              e,
                             );
                           }),
                       title: Text(e.name),

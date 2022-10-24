@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dribble_ui/gen_models/child_todo.dart';
 import 'package:dribble_ui/gen_models/todo.dart';
 
 class RemoteDatabase {
@@ -14,28 +15,40 @@ class RemoteDatabase {
         toFirestore: (todo, options) => todo.toJson());
   }
 
-  List<Todo> getAllTodosFromFirebase() {
+  Future<List<Todo>> getAllTodosFromFirebase() async {
     var todoList = <Todo>[];
-    StreamSubscription<QuerySnapshot<Todo>>? todoSubscription;
-    todoSubscription = _todosCollection().snapshots().listen((event) {
-      todoList = event.docs.map((e) => e.data()).toList();
-    })
-      ..onError((_) {
-        todoSubscription?.cancel();
-      });
+    // StreamSubscription<QuerySnapshot<Todo>>? todoSubscription;
+    // todoSubscription = _todosCollection().snapshots().listen((event) {
+    //   todoList = event.docs.map((e) => e.data()).toList();
+    // })
+    //   ..onError((_) {
+    //     todoSubscription?.cancel();
+    //   });
+    final data = await _todosCollection().get();
+    todoList = data.docs.map((e) => e.data()).toList();
     return todoList;
   }
 
-  Future<void> addTodoToFirebase(Todo todo) async {
-    // Sir. Adil said the document should be same as id of Todo
-    _todosCollection().doc(todo.id).set(todo);
-  }
-
-  Future<void> addChildTodoToFirebase(Todo todo) async {
-    _todosCollection().doc(todo.id).update(todo.toJson());
-  }
-
-  Future<void> changeStatusOfTodo(Todo todo) async {
+  Future<void> changeStatusOfTodoOnFirebase(Todo todo) async {
     _todosCollection().doc(todo.id).update({'isDone': !todo.isDone});
+  }
+
+  Future<void> addTodoToFirebase(Todo todo) {
+    // Sir. Adil said the document ID should be same as ID of Todo
+    return _todosCollection().doc(todo.id).set(todo);
+  }
+
+  Future<void> addChildTodoToFirebase(String id, ChildTodo todo) async {
+    _todosCollection().doc(id).update({
+      'childTodos': FieldValue.arrayUnion([todo.toJson()])
+    });
+  }
+
+  Future<void> changeChildTodoStatusOnFirebase(Todo todo) async {
+    _todosCollection().doc(todo.id).update({
+      'childTodos': todo.childTodos
+          .map((e) => e.copyWith(isDone: !e.isDone).toJson())
+          .toList()
+    });
   }
 }
